@@ -1,24 +1,30 @@
-# Accelerometer-and-Gyroscope-HAR-Pipeline
-Description
-This project provides a comprehensive pipeline for Human Activity Recognition (HAR) using combined accelerometer and gyroscope sensor data. It is designed to load raw inertial data from multiple sources, apply consistent preprocessing and feature extraction, and then perform activity detection. The goal is to evaluate a pre-trained model’s ability to distinguish specific activities (in particular, a "walking away" event) from normal daily movements across different datasets. The pipeline demonstrates end-to-end processing of sensor data – from filtering and windowing to classification and evaluation – in a unified framework.
-Features
-Data Filtering: Applies a high-pass Butterworth filter to accelerometer signals to remove low-frequency drift (sensor bias/gravity), ensuring a clean signal for analysis.
-Windowing: Segments the continuous sensor data into fixed-length time windows (e.g., 5-second windows with 50% overlap) for analysis. This sliding window approach standardizes input length for feature computation.
-Feature Extraction: Calculates engineered features from each window, including:
-Mean and minimum of the total acceleration magnitude (combining 3-axis accelerometer data).
-Mean of the gyroscope vector magnitude.
-Energy measures for accelerometer and gyroscope signals (mean of squared values in each window).
-An angle between the gyro X and Y axes signals.
-The standard deviation of the gyroscope Z-axis within the window.
-Multiple Dataset Support: The code can intake and process data from four different datasets (see below) by applying the same preprocessing and feature engineering steps, facilitating cross-dataset evaluation.
-Pre-trained Model Inference: Uses a pre-trained XGBoost classifier (loaded from a .pkl file) to predict activities from the extracted features. The model is trained to classify binary activities: “Home Activities” (class 0) vs “Walking Away” (class 1).
-Evaluation Metrics: Automatically computes evaluation metrics for predictions, including overall accuracy and weighted F1-score. A detailed classification report (precision, recall, F1 per class) is also generated.
-Visualization: Plots a confusion matrix to visualize performance. The confusion matrix graphic clearly shows true vs predicted class counts, helping identify any misclassifications (e.g., any home activity misidentified as walking away, or vice versa).
-Results Logging: Outputs prediction results and metrics to the console for quick review, and saves detailed results (including per-window predictions and probabilities) to CSV files for each dataset.
-Datasets
-This pipeline supports four human activity datasets, normalizing their data to a common format and labeling scheme before evaluation. The datasets and the code’s handling of each are summarized below:
-WEDA-FALL – Wrist Elderly Daily Activity and Fall Dataset: Involves accelerometer and gyroscope recordings from a wrist-worn device (Fitbit) for various daily activities and simulated falls. The data is available at multiple sampling rates (the code uses the 10 Hz version). The code loads paired accelerometer and gyroscope CSV files for each trial, merges them on their timestamp, and labels all activities as “Home_movements” (class 0) for evaluation purposes. (All original WEDA-FALL activities – e.g., walking, sitting, etc. – are treated as normal home activities in this analysis.)
-IPIN 2017 – IPIN Indoor Localization Competition 2017 dataset: Contains inertial sensor data (from a smartphone or wearable) collected for an indoor positioning challenge. The code expects the IPIN dataset as an archive (RAR) which it will extract. It then loads wrist sensor files (accelerometer/gyroscope) from the extracted data. All data from this dataset is assumed to correspond to the person “walking away” (class 1) scenario. The pipeline adds a dataset identifier and assigns the ground truth label 1 (Walking Away) to all windows from IPIN2017 during feature extraction.
-UCI HAR – UCI Human Activity Recognition Using Smartphones Dataset: A well-known public HAR dataset of smartphone accelerometer and gyroscope signals for activities like walking, standing, sitting, etc. This dataset is originally segmented into fixed windows with provided feature vectors. In our pipeline, we reconstruct a continuous time series from the raw inertial signal files (combining training and test parts) to apply our own preprocessing and 5-second windowing. All activities in UCI HAR are treated as “Home Activities” (class 0) in this evaluation (i.e. we ignore the original multi-class labels and assume none of these activities represent “walking away”). The unified features are then fed to the model to check if it remains correctly classifying them as home movements.
-GeoTecINIT – GeoTec INIT Inertial HAR Dataset: A dataset of inertial measurements from smartphones and smartwatches for HAR, containing sequences of activities such as sitting, standing up, walking, turning, etc. The code expects the dataset in a directory (after unzipping) with subject subfolders. It reads each subject’s CSV files (sensor streams), standardizes the column names, and maps all activity labels to “Home” (class 0) for a binary evaluation. If any required sensor axis is missing, the code handles it (e.g., creating dummy gyro data if needed). After preprocessing and windowing, all windows are effectively normal activities to the model, and the evaluation will reveal if the model incorrectly flags any as the “away” class.
-Despite the different origins and sampling rates of these datasets, the script applies a consistent pipeline: resampling signals to 10 Hz (if higher originally), filtering, and using the same window duration and feature formulas. This ensures that the model’s performance can be fairly evaluated across all datasets under similar conditions.
+# Accelerometer & Gyroscope Activity Recognition
+
+This project implements a robust pipeline for binary human activity recognition using inertial sensor data. It processes accelerometer and gyroscope signals to classify short activity windows as either **"Home Activities" (class 0)** or **"Walking Away" (class 1)** using a pre-trained XGBoost classifier.
+
+## 🚀 Features
+
+- Consistent preprocessing across datasets (filtering, windowing, resampling)
+- Feature engineering from raw accelerometer and gyroscope signals
+- Support for multiple benchmark datasets:
+  - WEDA-FALL (10Hz)
+  - IPIN2017
+  - UCI HAR
+  - GeoTecINIT
+- Binary classification using a pre-trained XGBoost model
+- Evaluation via accuracy, F1 score, confusion matrix, and visual analytics
+- Outputs prediction results to CSV for further analysis
+
+## 📁 Datasets
+
+| Dataset     | Label Used          | Class Assignment   |
+|-------------|---------------------|--------------------|
+| WEDA-FALL   | All activities      | Home Activities (0)|
+| IPIN2017    | All walking trials  | Walking Away (1)   |
+| UCI HAR     | All activities      | Home Activities (0)|
+| GeoTecINIT  | All activities      | Home Activities (0)|
+
+## 🛠️ Setup
+
+```bash
+pip install pandas numpy scipy scikit-learn xgboost joblib matplotlib seaborn rarfile
